@@ -69,12 +69,12 @@ public class Deposit extends JFrame implements ActionListener {
     if (ae.getSource()==deposit){
         String number = amount.getText();
         Date date = new Date();
-        if(number.equals("")){
+        if(number.isEmpty()){
             JOptionPane.showMessageDialog(null,"Please enter the amount you want to deposit");
         }else{
             try{
             Conn conn = new Conn();
-            String query = "insert into bank values ('"+pinnumber+"','"+date+"','Deposit','"+number+"')";
+            String query = "insert into bank values ('"+pinnumber+"','"+date+"','Deposit','"+number+"','Savings')";
             conn.s.executeUpdate(query);
             JOptionPane.showMessageDialog(null,"Rs "+number+ "Deposited Successfully");
             setVisible(false);

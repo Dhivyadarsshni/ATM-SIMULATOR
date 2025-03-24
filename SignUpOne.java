@@ -120,19 +120,19 @@ public class SignUpOne extends JFrame implements ActionListener {
         mstat.setFont(new Font("Raleway", Font.BOLD, 20));
         add(mstat);
 
-        //Marital Status- married
+        //Marital Status - married
         married = new JRadioButton("Married");
         married.setBounds(300,390,90,30);
         married.setBackground(Color.WHITE);
         add(married);
 
-        //Marital Status- Unmarried
+        //Marital Status - Unmarried
         unmarried = new JRadioButton("Unmarried");
         unmarried.setBounds(400,390,90,30);
         unmarried.setBackground(Color.WHITE);
         add(unmarried);
 
-        //Marital Status- Other
+        //Marital Status - Other
         other = new JRadioButton("Other");
         other.setBounds(510,390,70,30);
         other.setBackground(Color.WHITE);
