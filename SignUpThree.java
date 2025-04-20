@@ -249,11 +249,6 @@ public class SignUpThree extends JFrame implements ActionListener {
             setVisible(false);
             new Login().setVisible(true);
         }
-
-
-
-
-
     }
 
 
