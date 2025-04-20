@@ -240,8 +240,8 @@ public class SignUpOne extends JFrame implements ActionListener {
         String pin = pcodeTextfield.getText();
 
         try{
-            if(name.isEmpty()){
-                JOptionPane.showMessageDialog(null, "Name is required");
+            if(name.isEmpty()||fname.isEmpty()||dob.isEmpty()||gender.isEmpty()||email.isEmpty()||marital.isEmpty()||address.isEmpty()||city.isEmpty()||state.isEmpty()||pin.isEmpty()){
+                JOptionPane.showMessageDialog(null, "Fill in all mandatory details");
             }
             else{
                 Conn c = new Conn();
