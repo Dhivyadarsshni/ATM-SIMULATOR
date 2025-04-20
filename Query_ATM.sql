@@ -57,4 +57,6 @@ Amount VARCHAR(25)
 );
 SELECT* FROM bank;
 
+ALTER TABLE bank ADD COLUMN category VARCHAR(50);
+
 
