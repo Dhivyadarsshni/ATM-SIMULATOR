@@ -1,145 +1,28 @@
-/*package com.ATMSimulator;
-
-import org.jfree.chart.ChartFactory;
-import org.jfree.chart.ChartPanel;
-import org.jfree.chart.JFreeChart;
-import org.jfree.data.category.CategoryDataset;
-import org.jfree.data.category.DefaultCategoryDataset;
-
-import javax.swing.*;
-import java.awt.*;
-import java.sql.ResultSet;
-import java.util.ArrayList;
-
-public class MiniStatement extends JFrame {
-    String pinnumber;
-
-    public MiniStatement(String pinnumber) {
-        this.pinnumber = pinnumber;
-        setTitle("Mini Statement - Spending Chart");
-        setLayout(null);
-
-        // Bank name
-        JLabel bank = new JLabel("SRM Bank");
-        bank.setBounds(200, 20, 200, 25);
-        add(bank);
-
-        // Card number
-        JLabel card = new JLabel();
-        card.setBounds(20, 70, 300, 20);
-        add(card);
-
-        // Transaction details
-        JLabel mini = new JLabel();
-        mini.setVerticalAlignment(JLabel.TOP); // Align text to the top
-
-        // Wrap in JScrollPane
-        JScrollPane scrollPane = new JScrollPane(mini);
-        scrollPane.setBounds(20, 100, 450, 150); // Fixed height to show ~5 transactions
-        scrollPane.setVerticalScrollBarPolicy(JScrollPane.VERTICAL_SCROLLBAR_ALWAYS);
-        add(scrollPane);
-
-
-        // Balance label
-        JLabel balance = new JLabel();
-        balance.setBounds(20, 300, 400, 25);
-        add(balance);
-
-        // Fetch card number
-        try {
-            Conn conn = new Conn();
-            ResultSet rs = conn.s.executeQuery("SELECT * FROM login WHERE Pin_Number ='" + pinnumber + "'");
-            while (rs.next()) {
-                card.setText("Card Number: " + rs.getString("Card_Number").substring(0, 4) + " XXXX XXXX " + rs.getString("Card_Number").substring(12));
-            }
-        } catch (Exception e) {
-            System.out.println(e);
-        }
-
-        // Fetch transaction history and balance
-
-        try {
-            Conn conn = new Conn();
-            int bal = 0;
-            ResultSet rs = conn.s.executeQuery("select * from bank where Pin_Number ='" + pinnumber + "' ");
-
-            StringBuilder transactionHistory = new StringBuilder("<html>");
-            while (rs.next()) {
-                transactionHistory.append(rs.getString("Date"))
-                        .append("&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;")
-                        .append(rs.getString("Type"))
-                        .append("&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;")
-                        .append(rs.getString("Amount"))
-                        .append("<br><br>");
-
-                if (rs.getString("Type").equals("Deposit")) {
-                    bal += Integer.parseInt(rs.getString("amount"));
-                } else {
-                    bal -= Integer.parseInt(rs.getString("amount"));
-                }
-            }
-            transactionHistory.append("</html>");
-            mini.setText(transactionHistory.toString());
-
-            balance.setText("Your Current account balance is Rs " + bal);
-        } catch (Exception e) {
-            System.out.println(e);
-        }
-
-        // Create spending bar chart
-        JFreeChart barChart = ChartFactory.createBarChart(
-                "Spending Overview", "Category", "Amount (Rs)", createDataset(),
-                org.jfree.chart.plot.PlotOrientation.VERTICAL, true, true, false);
-        ChartPanel chartPanel = new ChartPanel(barChart);
-
-        chartPanel.setBounds(20, 350, 450, 350);
-        add(chartPanel);
-
-        // Frame settings
-        setSize(500, 750);
-        setLocation(20, 20);
-        getContentPane().setBackground(Color.WHITE);
-        setVisible(true);
-    }
-
-    private CategoryDataset createDataset() {
-        DefaultCategoryDataset dataset = new DefaultCategoryDataset();
-        try {
-            Conn conn = new Conn();
-            String[] categories = {"Food", "Bills", "Shopping", "Travel", "Other"};
-            for (String category : categories) {
-                String query = "SELECT SUM(Amount) FROM bank WHERE Pin_Number='" + pinnumber + "' AND category='" + category + "'";
-                ResultSet rs = conn.s.executeQuery(query);
-                if (rs.next()) {
-                    dataset.addValue(rs.getInt(1), "Spending", category);
-                }
-            }
-        } catch (Exception e) {
-            System.out.println(e);
-        }
-        return dataset;
-    }
-
-    public static void main(String[] args) {
-        new MiniStatement("");
-    }
-}*/
 package com.ATMSimulator;
 
 import org.jfree.chart.ChartFactory;
 import org.jfree.chart.ChartPanel;
 import org.jfree.chart.JFreeChart;
+import org.jfree.chart.labels.StandardCategoryItemLabelGenerator;
+import org.jfree.chart.plot.CategoryPlot;
+import org.jfree.chart.renderer.category.BarRenderer;
 import org.jfree.data.category.CategoryDataset;
 import org.jfree.data.category.DefaultCategoryDataset;
 
 import javax.swing.*;
 import javax.swing.table.DefaultTableModel;
 import java.awt.*;
+import java.awt.event.ActionEvent;
+import java.awt.event.ActionListener;
 import java.sql.ResultSet;
-import java.util.ArrayList;
+import java.text.SimpleDateFormat;
+import java.util.Calendar;
 
 public class MiniStatement extends JFrame {
     private String pinnumber;
+    private DefaultCategoryDataset dataset;
+    private JComboBox<String> filterDropdown;
+    private ChartPanel chartPanel;
 
     public MiniStatement(String pinnumber) {
         this.pinnumber = pinnumber;
@@ -173,6 +56,18 @@ public class MiniStatement extends JFrame {
         JLabel balance = new JLabel();
         balance.setBounds(20, 260, 400, 25);
         add(balance);
+
+        // Filter dropdown
+        filterDropdown = new JComboBox<>(new String[]{"Daily", "Weekly", "Monthly"});
+        filterDropdown.setBounds(350, 60, 120, 25);
+        add(filterDropdown);
+
+        filterDropdown.addActionListener(new ActionListener() {
+            @Override
+            public void actionPerformed(ActionEvent e) {
+                updateChart();
+            }
+        });
 
         // Fetch card number
         try {
@@ -211,11 +106,19 @@ public class MiniStatement extends JFrame {
         }
 
         // Create spending bar chart
-        JFreeChart barChart = ChartFactory.createBarChart(
-                "Spending Overview", "Category", "Amount (Rs)", createDataset(),
-                org.jfree.chart.plot.PlotOrientation.VERTICAL, true, true, false);
-        ChartPanel chartPanel = new ChartPanel(barChart);
+        dataset = new DefaultCategoryDataset();
+        updateChart();
 
+        JFreeChart barChart = ChartFactory.createBarChart(
+                "Spending Overview", "Category", "Amount (Rs)", dataset,
+                org.jfree.chart.plot.PlotOrientation.VERTICAL, true, true, false);
+
+        CategoryPlot plot = (CategoryPlot) barChart.getPlot();
+        BarRenderer renderer = (BarRenderer) plot.getRenderer();
+        renderer.setSeriesItemLabelGenerator(0, new StandardCategoryItemLabelGenerator());
+        renderer.setSeriesItemLabelsVisible(0, true);
+
+        chartPanel = new ChartPanel(barChart);
         chartPanel.setBounds(20, 300, 450, 350);
         add(chartPanel);
 
@@ -226,15 +129,17 @@ public class MiniStatement extends JFrame {
         setVisible(true);
     }
 
-    private CategoryDataset createDataset() {
-        DefaultCategoryDataset dataset = new DefaultCategoryDataset();
+    private void updateChart() {
+        dataset.clear();
+        String filter = (String) filterDropdown.getSelectedItem();
         try {
             Conn conn = new Conn();
             String[] categories = {"Food", "Bills", "Shopping", "Travel", "Other"};
+            String dateCondition = getDateCondition(filter);
 
             for (String category : categories) {
                 ResultSet rs = conn.s.executeQuery(
-                        "SELECT SUM(Amount) FROM bank WHERE Pin_Number='" + pinnumber + "' AND Category='" + category + "'");
+                        "SELECT SUM(Amount) FROM bank WHERE Pin_Number='" + pinnumber + "' AND Category='" + category + "' " + dateCondition);
                 if (rs.next()) {
                     dataset.addValue(rs.getInt(1), "Spending", category);
                 }
@@ -242,11 +147,26 @@ public class MiniStatement extends JFrame {
         } catch (Exception e) {
             e.printStackTrace();
         }
-        return dataset;
+    }
+
+    private String getDateCondition(String filter) {
+        SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd");
+        Calendar cal = Calendar.getInstance();
+        String condition = "";
+
+        if ("Daily".equals(filter)) {
+            condition = "AND Date = '" + sdf.format(cal.getTime()) + "'";
+        } else if ("Weekly".equals(filter)) {
+            cal.add(Calendar.DAY_OF_YEAR, -7);
+            condition = "AND Date >= '" + sdf.format(cal.getTime()) + "'";
+        } else if ("Monthly".equals(filter)) {
+            cal.add(Calendar.MONTH, -1);
+            condition = "AND Date >= '" + sdf.format(cal.getTime()) + "'";
+        }
+        return condition;
     }
 
     public static void main(String[] args) {
         new MiniStatement("1234"); // Pass test PIN for checking UI
     }
 }
-
