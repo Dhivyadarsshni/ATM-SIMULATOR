@@ -224,8 +224,8 @@ public class SignUpTwo extends JFrame implements ActionListener {
             existingaccount="No";
         }
         try{
-            if(aadhaar.isEmpty()){
-                JOptionPane.showMessageDialog(null, "Aadhaar ID is required");
+            if(aadhaar.isEmpty() || religion.isEmpty() ||category.isEmpty() || income.isEmpty()||qualification.isEmpty()|| occupation.isEmpty()||pan.isEmpty()|| seniorcitizen.isEmpty()||existingaccount.isEmpty() ){
+                JOptionPane.showMessageDialog(null, "Fill in all details");
             }
             else{
                 Conn c = new Conn();
